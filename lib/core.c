@@ -6,14 +6,34 @@
  * @date 08.04.2020
  */
 
+#include <errno.h>
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 
 #include <webthing.h>
 
+struct mdns_args {
+	const char *hostname;
+	int port;
+};
+
+static struct mdns_args a;
+
+void *mdns_thread(void *arg);
 int webthing_server_run(struct webthing **devs, int dev_n, const char *hostname, int port) {
+	pthread_t id;
+
+	a.hostname = hostname;
+	a.port = 5353;
+
 	fprintf(stderr, "Starting webthing server %s:%d\n");
+
+	pthread_create(&id, NULL, mdns_thread, &a);
+
+	while(1);
+
 	return 0;
 }
 
@@ -54,7 +74,7 @@ void webthing_action_destroy(struct webthing_action *action) {
 int webthing_add_action(struct webthing *thing, struct webthing_action *action) {
 	for (int i = 0; i < WEBTHING_MAX_ACTIONS; i++) {
 		if (thing->actions[i] == NULL) {
-			thing->actions[i] = prop;
+			thing->actions[i] = action;
 			return 0;
 		}
 	}

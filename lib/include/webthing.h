@@ -57,7 +57,7 @@ struct webthing_action *webthing_action_create(struct webthing_metadata *meta,
 void webthing_action_destroy(struct webthing_action *action);
 int webthing_add_action(struct webthing *thing, struct webthing_action *action);
 
-int webthing_server_run(struct webthing **devs, int dev_n);
+int webthing_server_run(struct webthing **devs, int dev_n, const char *hostname, int port);
 int webthing_run(struct webthing *thing);
 
 #endif /* WEBTHING_H */
