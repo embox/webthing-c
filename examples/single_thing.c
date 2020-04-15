@@ -10,6 +10,7 @@ struct webthing *build_thing(void) {
 	thing = webthing_alloc();
 
 	*thing = (struct webthing) {
+		.id   = "urn:dev:ops:my-lamp-1234",
 		.name = "My lamp",
 		.desc = "A web connected lamp",
 	};
@@ -79,7 +80,7 @@ int main(int argc, char **argv) {
 
 	thing = build_thing();
 
-	webthing_server_run(&thing, 1, "lamp", 8888);
+	webthing_server_run(&thing, 1, "lamp", 8890);
 
 	webthing_free(thing);
 

@@ -11,6 +11,7 @@ struct webthing_metadata;
 #define WEBTHING_MAX_ACTIONS 32
 
 struct webthing {
+	const char *id;
 	const char *name;
 	const char *desc;
 

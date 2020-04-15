@@ -9,9 +9,13 @@
 #include <errno.h>
 #include <pthread.h>
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
 
+#include <cjson/cJSON.h>
+
+#include <netdb.h>
 #include <webthing.h>
 
 struct mdns_args {
@@ -22,8 +26,20 @@ struct mdns_args {
 static struct mdns_args a;
 
 void *mdns_thread(void *arg);
+
+struct client_info {
+	struct sockaddr ci_addr;
+	socklen_t ci_addrlen;
+	int ci_sock;
+	int ci_index;
+
+	const char *ci_basedir;
+};
+char *json_thing(struct webthing *thing);
 int webthing_server_run(struct webthing **devs, int dev_n, const char *hostname, int port) {
 	pthread_t id;
+	struct sockaddr_in inaddr;
+	const int family = AF_INET;
 
 	a.hostname = hostname;
 	a.port = 5353;
@@ -32,7 +48,69 @@ int webthing_server_run(struct webthing **devs, int dev_n, const char *hostname,
 
 	pthread_create(&id, NULL, mdns_thread, &a);
 
-	while(1);
+	inaddr.sin_family = AF_INET;
+	inaddr.sin_port= htons(8890);
+	inaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+	int host = socket(family, SOCK_STREAM, IPPROTO_TCP);
+	if (host == -1) {
+		printf("socket() failure: %s", strerror(errno));
+		return -errno;
+	}
+
+	if (-1 == bind(host, (struct sockaddr *) &inaddr, sizeof(inaddr))) {
+		printf("bind() failure: %s", strerror(errno));
+		close(host);
+		return -errno;
+	}
+
+	if (-1 == listen(host, 1)) {
+		printf("listen() failure: %s", strerror(errno));
+		close(host);
+		return -errno;
+	}
+
+	while (1) {
+		struct client_info ci;
+
+		ci.ci_basedir = "./";
+		ci.ci_addrlen = sizeof(inaddr);
+		ci.ci_sock = accept(host, &ci.ci_addr, &ci.ci_addrlen);
+		if (ci.ci_sock == -1) {
+			if (errno != EINTR) {
+				printf("accept() failure: %s", strerror(errno));
+				usleep(100000);
+			}
+			continue;
+		}
+
+		char buf[1024];
+		int buf_sz = sizeof(buf);
+		char *str = json_thing(devs[0]);
+		printf("Got some http data");
+		int cbyte = snprintf(buf, 1024,
+				"HTTP/1.1 200\r\n"
+				"Content-Type: %s\r\n"
+				"Connection: close\r\n"
+				"Content-Length: %d\r\n"
+				"\r\n",
+				"application/json", strlen(str));
+
+
+//		if (0 > write(ci.ci_sock, buf, cbyte)) {
+//			return -errno;
+//		}
+//
+		strcat(buf, str);
+		printf("json is %s\n", str);
+		if (0 > write(ci.ci_sock, buf, strlen(buf))) {
+			return -errno;
+		}
+
+		sleep(100);
+		//httpd_client_process(&ci);
+
+		close(ci.ci_sock);
+	}
 
 	return 0;
 }
