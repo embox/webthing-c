@@ -12,8 +12,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
-
-#include <cjson/cJSON.h>
+#include <stdint.h>
 
 #include <netdb.h>
 #include <webthing.h>
@@ -23,6 +22,11 @@ struct mdns_args {
 	int port;
 };
 
+struct httpd_args {
+	uint16_t port;
+};
+
+struct httpd_args httpd_args;
 static struct mdns_args a;
 
 void *mdns_thread(void *arg);
@@ -36,6 +40,7 @@ struct client_info {
 	const char *ci_basedir;
 };
 char *json_thing(struct webthing *thing);
+
 int webthing_server_run(struct webthing **devs, int dev_n, const char *hostname, int port) {
 	pthread_t id;
 	struct sockaddr_in inaddr;
@@ -44,7 +49,7 @@ int webthing_server_run(struct webthing **devs, int dev_n, const char *hostname,
 	a.hostname = hostname;
 	a.port = 5353;
 
-	fprintf(stderr, "Starting webthing server %s:%d\n");
+	fprintf(stderr, "Starting webthing server %s:%d\n", a.hostname, a.port);
 
 	pthread_create(&id, NULL, mdns_thread, &a);
 
