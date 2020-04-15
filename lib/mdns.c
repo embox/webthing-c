@@ -113,7 +113,7 @@ void *mdns_thread(void *arg) {
 	int sock = mdns_socket_open_ipv4(port);
 	if (sock < 0) {
 		printf("Failed to open socket: %s\n", strerror(errno));
-		return -1;
+		return NULL;
 	}
 	printf("Opened IPv4 socket for mDNS/DNS-SD\n");
 
@@ -146,5 +146,5 @@ quit:
 	mdns_socket_close(sock);
 	printf("Closed socket\n");
 
-	return 0;
+	return NULL;
 }
