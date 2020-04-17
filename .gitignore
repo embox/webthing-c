@@ -1,0 +1,8 @@
+*.sw[a-z]
+.*.sw[a-z]
+*~
+/tags
+
+*.a
+*.o
+single_thing
