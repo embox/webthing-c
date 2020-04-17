@@ -5,12 +5,9 @@
 #include <webthing.h>
 
 char *json_thing(struct webthing *thing) {
-	char *string;
-	/* Webthing identification json string should look like this:
+	char *ret;
+	/* Missing fields from original example:
 	{
-		"id": "urn:dev:ops:my-lamp-1234",
-		"title": "My Lamp",
-		"@context": "https://iot.mozilla.org/schemas",
 		"properties": {
 			"on": {%
 				"@type": "OnOffProperty",
@@ -50,16 +47,6 @@ char *json_thing(struct webthing *thing) {
 				"unit": "degree celsius",
 				"links": [{"rel": "event",
 				"href": "/events/overheated"}]}},
-		"links": [{"rel": "properties",
-			"href": "/properties"},
-			{"rel": "actions", "href": "/actions"},
-			{"rel": "events", "href": "/events"},
-			{"rel": "alternate", "href": "ws://localhost:8888/"}],
-		"description": "A web connected lamp",
-		"@type": ["OnOffSwitch", "Light"],
-		"base": "http://localhost:8888/",
-		"securityDefinitions": {"nosec_sc": {"scheme": "nosec"}},
-		"security": "nosec_sc"
 	} */
 	cJSON *jthing = cJSON_CreateObject();
 
@@ -75,17 +62,96 @@ char *json_thing(struct webthing *thing) {
 		goto out;
 	}
 
+	cJSON_AddItemToObject(jthing, "properties", cJSON_CreateObject());
+	cJSON_AddItemToObject(jthing, "brightness", cJSON_CreateObject());
+	cJSON_AddItemToObject(jthing, "actions", cJSON_CreateObject());
+
+	{
+		cJSON *links;
+		if ((links = cJSON_AddArrayToObject(jthing, "links")) == NULL) {
+			goto out;
+		}
+
+		cJSON *link_prop = cJSON_CreateObject();
+		if ((cJSON_AddStringToObject(link_prop, "rel", "properties") == NULL) ||
+			(cJSON_AddStringToObject(link_prop, "href", "/properties") == NULL)) {
+			goto out;
+		}
+
+		cJSON_AddItemToArray(links, link_prop);
+
+		cJSON *actions_prop = cJSON_CreateObject();
+		if ((cJSON_AddStringToObject(actions_prop, "rel", "actions") == NULL) ||
+			(cJSON_AddStringToObject(actions_prop, "href", "/actions") == NULL)) {
+			goto out;
+		}
+
+		cJSON_AddItemToArray(links, actions_prop);
+
+		cJSON *events_prop = cJSON_CreateObject();
+		if ((cJSON_AddStringToObject(events_prop, "rel", "events") == NULL) ||
+			(cJSON_AddStringToObject(events_prop, "href", "/events") == NULL)) {
+			goto out;
+		}
+
+		cJSON_AddItemToArray(links, events_prop);
+
+		char wshost[1024];
+		snprintf(wshost, sizeof(wshost), "ws://%s:%d", thing->hostname, thing->port);
+
+		cJSON *alternate_prop = cJSON_CreateObject();
+		if ((cJSON_AddStringToObject(alternate_prop, "rel", "alternate") == NULL) ||
+			(cJSON_AddStringToObject(alternate_prop, "href", wshost) == NULL)) {
+			goto out;
+		}
+
+		cJSON_AddItemToArray(links, alternate_prop);
+	}
+
 	if (cJSON_AddStringToObject(jthing, "description", thing->desc) == NULL) {
 		goto out;
 	}
 
-	if (cJSON_AddStringToObject(jthing, "security", "nosec_sc") == NULL) {
-		goto out;
+	{
+		/* TODO update types */
+		const char *types[] = {
+			"OnOffSwitch",
+			"Light"
+		};
+
+		cJSON *strarr = cJSON_CreateStringArray(types, 2);
+
+		cJSON_AddItemToObject(jthing, "@type", strarr);
 	}
 
-	string = cJSON_Print(jthing);
+	{
+		char httpcost[1024];
+		snprintf(httpcost, sizeof(httpcost), "http://%s:%d", thing->hostname, thing->port);
+		if (cJSON_AddStringToObject(jthing, "base", httpcost) == NULL) {
+			goto out;
+		}
+	}
+
+	{
+		cJSON *inner = cJSON_CreateObject();
+		cJSON *outer = cJSON_CreateObject();
+
+		if (cJSON_AddStringToObject(inner, "scheme", "nosec") == NULL) {
+			goto out;
+		}
+
+		cJSON_AddItemToObject(outer, "nosec_sc", inner);
+
+		cJSON_AddItemToObject(jthing, "securityDefinitions", outer);
+
+		if (cJSON_AddStringToObject(jthing, "security", "nosec_sc") == NULL) {
+			goto out;
+		}
+	}
+
+	ret = cJSON_Print(jthing);
 out:
 	cJSON_Delete(jthing);
 
-	return string;
+	return ret;
 }

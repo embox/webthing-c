@@ -15,6 +15,9 @@ struct webthing {
 	const char *name;
 	const char *desc;
 
+	const char *hostname;
+	int port;
+
 	struct webthing_property *properties[WEBTHING_MAX_PROPS];
 	struct webthing_action   *actions[WEBTHING_MAX_ACTIONS];
 };

@@ -23,7 +23,7 @@ lib: core.o mdns.o httpd.o httpd.o
 
 examples: single_thing
 
-single_thing:
+single_thing: lib
 	gcc -c examples/single_thing.c -o single_thing.o -Ilib/include
 	gcc single_thing.o webthing.a lib/libcjson.a -o single_thing -pthread
 
