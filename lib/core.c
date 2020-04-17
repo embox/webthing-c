@@ -15,6 +15,7 @@
 #include <stdint.h>
 
 #include <netdb.h>
+#include "mdns.h"
 #include <webthing.h>
 
 #include "core.h"
