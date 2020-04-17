@@ -80,7 +80,7 @@ int main(int argc, char **argv) {
 
 	thing = build_thing();
 
-	webthing_server_run(&thing, 1, "lamp", 8890);
+	webthing_server_run(&thing, 1, "lamp", 8891);
 
 	webthing_free(thing);
 

@@ -9,20 +9,21 @@
  * 	- Linux adaptation
  */
 
-#include <assert.h>
-#include <string.h>
-#include <unistd.h>
-#include <errno.h>
-#include <sys/wait.h>
-#include <stdio.h>
-#include <stdint.h>
-
 #include <arpa/inet.h>
+#include <assert.h>
+#include <errno.h>
 #include <netinet/in.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <string.h>
 #include <sys/socket.h>
+#include <sys/wait.h>
+#include <unistd.h>
 
+#include "core.h"
 #include "emhttp_lib.h"
 
+#include <webthing.h>
 
 #define BUFF_SZ   (1024)
 
@@ -33,12 +34,13 @@ struct client_info {
 	int ci_index;
 
 	const char *ci_basedir;
+
+	struct webthing *thing;
 };
 
-static char httpd_g_inbuf[BUFF_SZ];
+static char http_g_inbuf[BUFF_SZ];
 
-
-static int httpd_read_http_header(int sk, char *buf, size_t buf_sz) {
+static int http_read_http_header(int sk, char *buf, size_t buf_sz) {
 	const char pattern[] = "\r\n\r\n";
 	char *pb;
 	int offset;
@@ -69,10 +71,10 @@ static int httpd_read_http_header(int sk, char *buf, size_t buf_sz) {
 	return header_len;
 }
 
-int httpd_build_request(struct client_info *cinfo, struct http_req *hreq, char *buf, size_t buf_sz) {
+int http_build_request(struct client_info *cinfo, struct http_req *hreq, char *buf, size_t buf_sz) {
 	int nbyte;
 
-	nbyte = httpd_read_http_header(cinfo->ci_sock, buf, buf_sz - 1);
+	nbyte = http_read_http_header(cinfo->ci_sock, buf, buf_sz - 1);
 	if (nbyte < 0) {
 		fprintf(stderr, "can't read from client socket: %s\n", strerror(errno));
 		return -errno;
@@ -87,7 +89,7 @@ int httpd_build_request(struct client_info *cinfo, struct http_req *hreq, char *
 	return nbyte;
 }
 
-static int httpd_header(const struct client_info *cinfo, const char *msg, int msg_size) {
+static int http_header(const struct client_info *cinfo, const char *msg, int msg_size) {
 	int cbyte;
 	char *buf;
 
@@ -106,35 +108,32 @@ static int httpd_header(const struct client_info *cinfo, const char *msg, int ms
 	return 0;
 }
 
-static void httpd_client_process(struct client_info *cinfo) {
+static void http_client_process(struct client_info *cinfo) {
 	struct http_req hreq;
 	int err;
+	char *resp;
 
-	if (0 > (err = httpd_build_request(cinfo, &hreq, httpd_g_inbuf, sizeof(httpd_g_inbuf)))) {
+	if (0 > (err = http_build_request(cinfo, &hreq, http_g_inbuf, sizeof(http_g_inbuf)))) {
 		fprintf(stderr, "can't build request: %s\n", strerror(-err));
 	}
 
 	fprintf(stderr, "method=%s uri_target=%s uri_query=%s\n",
 			   hreq.method, hreq.uri.target, hreq.uri.query);
 
+	resp = json_thing(cinfo->thing);
 
-	httpd_header(cinfo, "!!!!!!", sizeof("!!!!!!"));
+	http_header(cinfo, resp, strlen(resp));
 }
 
-struct httpd_args {
-	uint16_t port;
-};
-
-void *httpd_thread(void *arg) {
+void *http_thread(void *arg) {
 	int host;
 	struct sockaddr_in inaddr;
 	const int family = AF_INET;
-	struct httpd_args *a = arg;
+	struct http_args *a = arg;
 
 	inaddr.sin_family = AF_INET;
 	inaddr.sin_port= htons(a->port);
 	inaddr.sin_addr.s_addr = htonl(INADDR_ANY);
-
 
 	host = socket(family, SOCK_STREAM, IPPROTO_TCP);
 	if (host == -1) {
@@ -154,12 +153,12 @@ void *httpd_thread(void *arg) {
 		return (void *)(uintptr_t)-errno;
 	}
 
-
 	while (1) {
 		struct client_info ci;
 
 		ci.ci_addrlen = sizeof(inaddr);
 		ci.ci_sock = accept(host, &ci.ci_addr, &ci.ci_addrlen);
+		ci.thing = a->thing;
 		if (ci.ci_sock == -1) {
 			if (errno != EINTR) {
 				fprintf(stderr, "accept() failure: %s\n", strerror(errno));
@@ -168,7 +167,7 @@ void *httpd_thread(void *arg) {
 			continue;
 		}
 
-		httpd_client_process(&ci);
+		http_client_process(&ci);
 
 		close(ci.ci_sock);
 	}

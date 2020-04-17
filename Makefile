@@ -9,17 +9,14 @@ json.o: lib/json.c
 mdns.o: lib/mdns.c
 	gcc -c -static lib/mdns.c -o mdns.o -pthread
 
-lib: core.o mdns.o json.o
-	ar rcs webthing.a core.o mdns.o json.o lib/libcjson.a
-
 emhttp_lib.o: lib/emhttp_lib.c
 	gcc -c -static lib/emhttp_lib.c -o emhttp_lib.o
 
-httpd.o: lib/httpd.c emhttp_lib.o
-	gcc -c -static lib/httpd.c -o httpd.o
+http.o: lib/http.c emhttp_lib.o
+	gcc -c -static lib/http.c -o http.o -Ilib/include
 	
-lib: core.o mdns.o httpd.o httpd.o
-	ar rcs webthing.a core.o mdns.o httpd.o emhttp_lib.o
+lib: core.o mdns.o http.o json.o emhttp_lib.o
+	ar rcs webthing.a core.o mdns.o json.o http.o emhttp_lib.o
 
 examples: single_thing
 

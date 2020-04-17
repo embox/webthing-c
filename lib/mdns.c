@@ -1,9 +1,10 @@
 #include "mdns.h"
+#include "core.h"
 
 #include <stdio.h>
 #include <errno.h>
 
-#  include <netdb.h>
+#include <netdb.h>
 
 static char addrbuffer[64];
 static char namebuffer[256];
@@ -94,10 +95,6 @@ service_callback(int sock, const struct sockaddr* from, size_t addrlen,
 	return 0;
 }
 
-struct mdns_args {
-	const char *hostname;
-	int port;
-};
 void *mdns_thread(void *arg) {
 	size_t capacity = 2048;
 	void* buffer = malloc(capacity);
