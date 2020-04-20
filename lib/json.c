@@ -62,7 +62,55 @@ char *json_thing(struct webthing *thing) {
 		goto out;
 	}
 
-	cJSON_AddItemToObject(jthing, "properties", cJSON_CreateObject());
+	{
+		cJSON *props = cJSON_CreateObject();
+		int i = 0;
+
+		while (thing->properties[i] != NULL) {
+			struct webthing_property *p = thing->properties[i];
+			cJSON *prop = cJSON_CreateObject();
+
+			if (cJSON_AddStringToObject(prop, "@type", p->attype) == NULL) {
+				goto out;
+			}
+
+			if (cJSON_AddStringToObject(prop, "title", p->title) == NULL) {
+				goto out;
+			}
+
+			if (cJSON_AddStringToObject(prop, "type", p->type) == NULL) {
+				goto out;
+			}
+
+			if (cJSON_AddStringToObject(prop, "description", p->description) == NULL) {
+				goto out;
+			}
+
+			cJSON *link;
+			if ((link = cJSON_AddArrayToObject(prop, "links")) == NULL) {
+				printf("fail %d\n", __LINE__);
+				goto out;
+			}
+
+			cJSON *link_prop = cJSON_CreateObject();
+			char prop_str[1024];
+			snprintf(prop_str, sizeof(prop_str), "/properties/%s", p->href);
+
+			if ((cJSON_AddStringToObject(link_prop, "rel", "properties") == NULL) ||
+					(cJSON_AddStringToObject(link_prop, "href", prop_str) == NULL)) {
+				printf("fail %d\n", __LINE__);
+				goto out;
+			}
+
+				printf("fail %d\n", __LINE__);
+			cJSON_AddItemToObject(prop, p->href, link_prop);
+
+			cJSON_AddItemToObject(props, p->href, prop);
+			i++;
+		}
+
+		cJSON_AddItemToObject(jthing, "properties", cJSON_CreateObject());
+	}
 	cJSON_AddItemToObject(jthing, "brightness", cJSON_CreateObject());
 	cJSON_AddItemToObject(jthing, "actions", cJSON_CreateObject());
 
@@ -150,6 +198,8 @@ char *json_thing(struct webthing *thing) {
 	}
 
 	ret = cJSON_Print(jthing);
+
+	printf("%s\n", ret);
 out:
 	cJSON_Delete(jthing);
 

@@ -23,6 +23,11 @@ struct webthing {
 };
 
 struct webthing_property {
+	const char *attype;
+	const char *title;
+	const char *type;
+	const char *description;
+	const char *href;
 };
 
 struct webthing_input {
@@ -37,6 +42,7 @@ struct webthing_metadata {
 	const char *title;
 	const char *type;
 	const char *description;
+	const char *href;
 
 	int minimum;
 	int maximum;

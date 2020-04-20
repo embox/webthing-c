@@ -122,6 +122,8 @@ static void http_client_process(struct client_info *cinfo) {
 
 	resp = json_thing(cinfo->thing);
 
+	printf("rest=%s\n", resp);
+
 	http_header(cinfo, resp, strlen(resp));
 }
 

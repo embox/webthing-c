@@ -61,10 +61,43 @@ int webthing_sever_stop(void) {
 
 struct webthing_property *webthing_property_create(struct webthing_metadata *meta) {
 	struct webthing_property *ret = malloc(sizeof(*ret));
+	ret->attype = "";
+	ret->title = "";
+	ret->type = "";
+	ret->description = "";
+	ret->href = "";
+
+	if (meta->href != NULL) {
+		ret->href = strdup(meta->href);
+	}
+
+	if (meta->at_type != NULL) {
+		ret->attype = strdup(meta->at_type);
+	}
+
+	if (meta->title != NULL) {
+		ret->title = strdup(meta->title);
+	}
+
+	if (meta->description != NULL) {
+		ret->description = strdup(meta->description);
+	}
+
+	if (meta->type != NULL) {
+		ret->type = strdup(meta->type);
+	}
+
 	return ret;
 }
 
 void webthing_property_destroy(struct webthing_property *prop) {
+	free((void *) prop->attype);
+	free((void *) prop->type);
+	free((void *) prop->type);
+	free((void *) prop->title);
+	free((void *) prop->description);
+	free((void *) prop->href);
+
 	free(prop);
 }
 
