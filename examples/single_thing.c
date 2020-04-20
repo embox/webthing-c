@@ -22,6 +22,7 @@ struct webthing *build_thing(void) {
 		.title = "On/Off",
 		.type = "boolean",
 		.description = "Whether the lamp is turned on",
+		.href = "on",
 	};
 
 	on_off = webthing_property_create(&on_off_meta);
