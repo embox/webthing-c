@@ -22,5 +22,6 @@ struct http_req {
 
 extern char *http_parse_request(char *str, struct http_req *hreq);
 extern char *http_get_text_response_header(void);
+extern char *http_get_json_response_header(char *buf, int buf_size, int content_lengh);
 
 #endif /* EMHTTP_LIB_H_ */

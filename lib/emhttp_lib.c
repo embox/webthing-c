@@ -74,8 +74,20 @@ char *http_parse_request(char *str, struct http_req *hreq) {
 }
 
 char *http_get_text_response_header(void) {
-	return "HTTP/1.1 200\r\n"
+	return "HTTP/1.1 200 OK\r\n"
 			"Content-Type: text/plain\r\n"
 			"Connection: close\r\n"
 			"\r\n";
+}
+
+char *http_get_json_response_header(char *buf, int buf_size, int content_lengh) {
+	snprintf(buf, buf_size, "HTTP/1.1 200 OK\r\n"
+			"Content-Type: application/json\r\n"
+			"Access-Control-Allow-Origin: *\r\n"
+			"Access-Control-Allow-Headers: Origin, X-Requested-With, Content-Type, Accept\r\n"
+			"Access-Control-Allow-Methods: GET, HEAD, PUT, POST, DELETE\r\n"
+			"Content-Length: %d\r\n"
+			"Connection: close\r\n"
+			"\r\n", content_lengh);
+	return buf;
 }

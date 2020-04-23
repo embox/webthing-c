@@ -727,8 +727,9 @@ mdns_socket_listen(int sock, void* buffer, size_t capacity,
 	int ret = recvfrom(sock, buffer, (mdns_size_t)capacity, 0, saddr, &addrlen);
 	if (ret <= 0)
 		return 0;
-
+#if 0
 	printf("recevied!\n");
+#endif
 	size_t data_size = (size_t)ret;
 	size_t records = 0;
 	uint16_t* data = (uint16_t*)buffer;

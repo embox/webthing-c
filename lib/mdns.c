@@ -78,13 +78,16 @@ service_callback(int sock, const struct sockaddr* from, size_t addrlen,
 	if (rtype == MDNS_RECORDTYPE_PTR) {
 		mdns_string_t service = mdns_string_extract(data, size, &offset,
 		                                            namebuffer, sizeof(namebuffer));
+#if 1
 		printf("%.*s : question PTR %.*s\n",
 		       MDNS_STRING_FORMAT(fromaddrstr), MDNS_STRING_FORMAT(service));
-
+#endif
 		const service_record_t* service_record = (const service_record_t*)user_data;
 		size_t service_length = strlen(service_record->service);
 		if ((service.length == service_length) && (strncmp(service.str, service_record->service, service_length) == 0)) {
+#if 1
 			printf("  --> answer %s.%s port %d\n", service_record->hostname, service_record->service, service_record->port);
+#endif
 			mdns_query_answer(sock, from, addrlen, sendbuffer, sizeof(sendbuffer),
 			                  transaction_id, service_record->service, service_length,
 			                  service_record->hostname, strlen(service_record->hostname),

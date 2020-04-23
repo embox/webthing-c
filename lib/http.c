@@ -92,8 +92,9 @@ int http_build_request(struct client_info *cinfo, struct http_req *hreq, char *b
 static int http_header(const struct client_info *cinfo, const char *msg, int msg_size) {
 	int cbyte;
 	char *buf;
+	char header_buf[4000];
 
-	buf = http_get_text_response_header();
+	buf = http_get_json_response_header(header_buf, sizeof(header_buf), msg_size);
 
 	cbyte = strlen(buf);
 
