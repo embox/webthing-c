@@ -33,6 +33,7 @@ struct webthing *build_thing(void) {
 		.title       = "Brightness",
 		.type        = "integer",
 		.description = "The level of light from 0 to 100",
+		.href = "brightness",
 		.minimum     = 0,
 		.maximum     = 100,
 		.unit        = "percent",
