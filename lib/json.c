@@ -1,11 +1,17 @@
 #include <stdio.h>
+#include <unistd.h>
+#include <string.h>
 
 #include <cjson/cJSON.h>
 
 #include <webthing.h>
 
 char *json_thing(struct webthing *thing) {
+	char hostname[64] = {0};
 	char *ret;
+
+	gethostname(hostname, sizeof(hostname) - sizeof(".local.") - 1);
+	strncat(hostname, ".local", sizeof(hostname) - 1);
 	/* Missing fields from original example:
 	{
 		"properties": {
@@ -145,7 +151,7 @@ char *json_thing(struct webthing *thing) {
 		cJSON_AddItemToArray(links, events_prop);
 
 		char wshost[1024];
-		snprintf(wshost, sizeof(wshost), "ws://%s:%d", thing->hostname, thing->port);
+		snprintf(wshost, sizeof(wshost), "ws://%s:%d/", hostname, thing->port);
 
 		cJSON *alternate_prop = cJSON_CreateObject();
 		if ((cJSON_AddStringToObject(alternate_prop, "rel", "alternate") == NULL) ||
@@ -174,7 +180,7 @@ char *json_thing(struct webthing *thing) {
 
 	{
 		char httpcost[1024];
-		snprintf(httpcost, sizeof(httpcost), "http://%s:%d", thing->hostname, thing->port);
+		snprintf(httpcost, sizeof(httpcost), "http://%s:%d/", hostname, thing->port);
 		if (cJSON_AddStringToObject(jthing, "base", httpcost) == NULL) {
 			goto out;
 		}

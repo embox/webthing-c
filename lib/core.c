@@ -49,7 +49,7 @@ int webthing_server_run(struct webthing **devs, int dev_n, const char *hostname,
 	http_args.port = port;
 	http_args.thing = devs[0];
 	devs[0]->port = port;
-	devs[0]->hostname = "localhost";
+	//devs[0]->hostname = "localhost";
 	pthread_create(&id, NULL, http_thread, &http_args);
 
 	while (1) { }
