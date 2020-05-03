@@ -113,19 +113,39 @@ static void http_client_process(struct client_info *cinfo) {
 	struct http_req hreq;
 	int err;
 	char *resp;
+	char *connection;
 
 	if (0 > (err = http_build_request(cinfo, &hreq, http_g_inbuf, sizeof(http_g_inbuf)))) {
 		fprintf(stderr, "can't build request: %s\n", strerror(-err));
 	}
 
-	fprintf(stderr, "method=%s uri_target=%s uri_query=%s\n",
-			   hreq.method, hreq.uri.target, hreq.uri.query);
+	connection = http_find_field(hreq.fields, "Connection");
 
-	resp = json_thing(cinfo->thing);
+	fprintf(stderr, "method=%s uri_target=%s uri_query=%s connection=%s\n",
+			   hreq.method, hreq.uri.target, hreq.uri.query, connection);
+	if (NULL == connection) {
+		printf("didn't find Connection field\n");
+	} else if (0 == strcmp(connection,"close")) {
+		resp = json_thing(cinfo->thing);
 
-	printf("rest=%s\n", resp);
+		printf("rest=%s\n", resp);
 
-	http_header(cinfo, resp, strlen(resp));
+		http_header(cinfo, resp, strlen(resp));
+	} else {
+		char header_buf[4000];
+		int cbyte;
+
+		resp = http_get_switching_response_header(header_buf, sizeof(header_buf), "websocket");
+
+		cbyte = strlen(resp);
+
+		if (0 > write(cinfo->ci_sock, resp, cbyte)) {
+			return;
+		}
+
+		printf("switch connection\n");
+
+	}
 }
 
 void *http_thread(void *arg) {

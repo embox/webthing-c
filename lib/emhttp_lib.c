@@ -39,7 +39,8 @@ static char *httpd_parse_request_line(char *str, struct http_req *hreq) {
 		return NULL;
 	}
 
-	*next_line = '\0';
+	*next_line++ = '\0';
+	*next_line++ = '\0';
 
 	hreq->method = str;
 	pb = strchr(str, ' ');
@@ -57,20 +58,48 @@ static char *httpd_parse_request_line(char *str, struct http_req *hreq) {
 
 	httpd_parse_uri(uri, &hreq->uri);
 
-	return next_line + 2; /* "\r\n" */
+	return next_line;
 }
 
-
 char *http_parse_request(char *str, struct http_req *hreq) {
-	char *pb;
+	char *next_line;
 
-	pb = httpd_parse_request_line(str, hreq);
-	if (!pb) {
+	hreq->fields = httpd_parse_request_line(str, hreq);
+	if (!hreq->fields) {
 		printf("can't parse request line\n");
 		return NULL;
 	}
+	next_line = hreq->fields;
 
-	return pb;
+	while (memcmp(next_line, "\r\n", 2)) {
+		next_line = strstr(next_line, "\r\n");
+		if (!next_line) {
+			printf("can't fine end of header\n");
+			return NULL;
+		}
+
+		*next_line++ = '\0';
+		*next_line++ = '\0';
+	}
+	return hreq->fields;
+}
+
+char *http_find_field(char *fields, char *field) {
+	char full_field[0x40];
+	int len;
+
+	strncpy(full_field, field, sizeof(full_field) - 2 -1 );
+	strcat(full_field, ": ");
+
+	len = strlen(full_field);
+
+	while(strncmp(fields, full_field, len)) {
+		fields += (strlen(fields) + 2);
+		if (0 == memcmp(fields, "\r\n", 2)) {
+			return NULL;
+		}
+	}
+	return fields + len;
 }
 
 char *http_get_text_response_header(void) {
@@ -89,5 +118,16 @@ char *http_get_json_response_header(char *buf, int buf_size, int content_lengh) 
 			"Content-Length: %d\r\n"
 			"Connection: close\r\n"
 			"\r\n", content_lengh);
+	return buf;
+}
+
+char *http_get_switching_response_header(char *buf, int buf_size, char *upgrade_type) {
+	snprintf(buf, buf_size, "HTTP/1.1 101 Switching protocols\r\n"
+			"Access-Control-Allow-Origin: *\r\n"
+			"Access-Control-Allow-Headers: Origin, X-Requested-With, Content-Type, Accept\r\n"
+			"Access-Control-Allow-Methods: GET, HEAD, PUT, POST, DELETE\r\n"
+			"Upgrade: %s"
+			"Connection: Upgrade\r\n"
+			"\r\n", upgrade_type);
 	return buf;
 }
