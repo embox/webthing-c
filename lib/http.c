@@ -20,8 +20,11 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+ #include <openssl/sha.h>
+
 #include "core.h"
 #include "emhttp_lib.h"
+#include "b64.h"
 
 #include <webthing.h>
 
@@ -132,10 +135,27 @@ static void http_client_process(struct client_info *cinfo) {
 
 		http_header(cinfo, resp, strlen(resp));
 	} else {
-		char header_buf[4000];
+		char header_buf[400];
 		int cbyte;
+		char *key;
+		char sec_key[100];
 
-		resp = http_get_switching_response_header(header_buf, sizeof(header_buf), "websocket");
+		key = http_find_field(hreq.fields, "Sec-WebSocket-Key");
+		strncpy(sec_key, key, sizeof(sec_key)-1);
+		sec_key[sizeof(sec_key)-1] = '\0';
+		strncat(sec_key, "258EAFA5-E914-47DA-95CA-C5AB0DC85B11", sizeof(sec_key)-1);
+		sec_key[sizeof(sec_key)-1] = '\0';
+
+
+		size_t length = strlen(sec_key);
+
+		unsigned char hash[200];
+		char out_key[32];
+		size_t out_coded_sz;
+		SHA1(sec_key, length, hash);
+		b64_encode(hash, 20, out_key, 32, &out_coded_sz);
+
+		resp = http_get_switching_response_header(header_buf, sizeof(header_buf), "websocket", out_key);
 
 		cbyte = strlen(resp);
 

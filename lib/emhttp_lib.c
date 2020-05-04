@@ -121,13 +121,14 @@ char *http_get_json_response_header(char *buf, int buf_size, int content_lengh) 
 	return buf;
 }
 
-char *http_get_switching_response_header(char *buf, int buf_size, char *upgrade_type) {
+char *http_get_switching_response_header(char *buf, int buf_size, char *upgrade_type, char *sec_key) {
 	snprintf(buf, buf_size, "HTTP/1.1 101 Switching protocols\r\n"
 			"Access-Control-Allow-Origin: *\r\n"
 			"Access-Control-Allow-Headers: Origin, X-Requested-With, Content-Type, Accept\r\n"
 			"Access-Control-Allow-Methods: GET, HEAD, PUT, POST, DELETE\r\n"
 			"Upgrade: %s"
 			"Connection: Upgrade\r\n"
-			"\r\n", upgrade_type);
+			"Sec-Websocket-Accept: %s\r\n"
+			"\r\n", upgrade_type, sec_key);
 	return buf;
 }
